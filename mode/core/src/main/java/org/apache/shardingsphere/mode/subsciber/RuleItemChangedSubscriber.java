@@ -43,17 +43,19 @@ public final class RuleItemChangedSubscriber implements EventSubscriber {
     @SuppressWarnings({"rawtypes", "unchecked", "unused"})
     @Subscribe
     public void renew(final AlterRuleItemEvent event) {
-        if (!event.getActiveVersion().equals(contextManager.getMetaDataContexts().getPersistService().getMetaDataVersionPersistService().getActiveVersionByFullPath(event.getActiveVersionKey()))) {
+        if (!event.getActiveVersion().equals(contextManager.getPersistServiceFacade().getMetaDataPersistService().getMetaDataVersionPersistService()
+                .getActiveVersionByFullPath(event.getActiveVersionKey()))) {
             return;
         }
         RuleItemConfigurationChangedProcessor processor = TypedSPILoader.getService(RuleItemConfigurationChangedProcessor.class, event.getType());
         String yamlContent =
-                contextManager.getMetaDataContexts().getPersistService().getMetaDataVersionPersistService().getVersionPathByActiveVersion(event.getActiveVersionKey(), event.getActiveVersion());
+                contextManager.getPersistServiceFacade().getMetaDataPersistService().getMetaDataVersionPersistService()
+                        .getVersionPathByActiveVersion(event.getActiveVersionKey(), event.getActiveVersion());
         String databaseName = event.getDatabaseName();
         RuleConfiguration currentRuleConfig = processor.findRuleConfiguration(contextManager.getMetaDataContexts().getMetaData().getDatabase(databaseName));
         synchronized (this) {
             processor.changeRuleItemConfiguration(event, currentRuleConfig, processor.swapRuleItemConfiguration(event, yamlContent));
-            contextManager.getConfigurationContextManager().alterRuleConfiguration(databaseName, currentRuleConfig);
+            contextManager.getManagerServiceFacade().getConfigurationManagerService().alterRuleConfiguration(databaseName, currentRuleConfig);
         }
     }
     
@@ -73,7 +75,7 @@ public final class RuleItemChangedSubscriber implements EventSubscriber {
         RuleConfiguration currentRuleConfig = processor.findRuleConfiguration(contextManager.getMetaDataContexts().getMetaData().getDatabase(databaseName));
         synchronized (this) {
             processor.dropRuleItemConfiguration(event, currentRuleConfig);
-            contextManager.getConfigurationContextManager().dropRuleConfiguration(databaseName, currentRuleConfig);
+            contextManager.getManagerServiceFacade().getConfigurationManagerService().dropRuleConfiguration(databaseName, currentRuleConfig);
         }
     }
 }
